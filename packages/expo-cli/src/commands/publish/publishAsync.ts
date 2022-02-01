@@ -6,10 +6,13 @@ import {
   PackageJSONConfig,
   ProjectTarget,
 } from '@expo/config';
+import JsonFile from '@expo/json-file';
 import chalk from 'chalk';
 import fs from 'fs';
 import { Ora } from 'ora';
 import path from 'path';
+import resolveFrom from 'resolve-from';
+import semver from 'semver';
 import { Project, UserManager } from 'xdl';
 
 import CommandError, { ErrorCodes } from '../../CommandError';
@@ -41,6 +44,7 @@ export async function actionAsync(
   const { exp, pkg } = getConfig(projectRoot, {
     skipSDKVersionRequirement: true,
   });
+  assertExpoUpdatesInstalled(projectRoot, exp.sdkVersion);
   assertUpdateURLCorrectlyConfigured(exp);
   const { sdkVersion, runtimeVersion } = exp;
 
@@ -148,6 +152,25 @@ function assertValidReleaseChannel(releaseChannel?: string): void {
       'Release channel name can only contain lowercase letters, numbers and special characters . _ and -'
     );
   }
+}
+
+function assertExpoUpdatesInstalled(projectDir: string, sdkVersion?: string): void {
+  // before sdk 44, expo-update was included in with the expo module
+  if (sdkVersion && semver.lt(sdkVersion, '44.0.0')) {
+    return;
+  }
+
+  const packageJsonPath = resolveFrom.silent(projectDir, './package.json');
+  if (packageJsonPath) {
+    const expoPackageJson = JsonFile.read(packageJsonPath, { json5: true });
+    if (expoPackageJson.dependencies && (expoPackageJson.dependencies as any)['expo-updates']) {
+      return;
+    }
+  }
+
+  throw new Error(
+    `Expo CLI is not installed in this project. Please run "expo install expo-updates".`
+  );
 }
 
 function isMaybeAnEASUrl(url: string): boolean {

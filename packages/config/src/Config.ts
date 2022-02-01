@@ -140,9 +140,7 @@ export function getConfig(projectRoot: string, options: GetConfigOptions = {}): 
       if (configWithDefaultValues.exp.hooks) {
         delete configWithDefaultValues.exp.hooks;
       }
-      if (configWithDefaultValues.exp.ios?.config) {
-        delete configWithDefaultValues.exp.ios.config;
-      }
+      delete configWithDefaultValues.exp.ios?.config;
       if (configWithDefaultValues.exp.android?.config) {
         delete configWithDefaultValues.exp.android.config;
       }
