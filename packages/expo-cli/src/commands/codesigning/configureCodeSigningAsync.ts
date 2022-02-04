@@ -3,7 +3,7 @@ import {
   convertKeyPairPEMToKeyPair,
   validateSelfSignedCertificate,
 } from '@expo/code-signing-certificates';
-import { getConfig } from '@expo/config';
+import { ExpoConfig, getConfig } from '@expo/config';
 import assert from 'assert';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -31,16 +31,26 @@ export async function actionAsync(projectRoot: string, { input }: Options) {
   validateSelfSignedCertificate(certificate, keyPair);
 
   const { exp } = getConfig(projectRoot, { skipSDKVersionRequirement: true });
+
+  const fields: ExpoConfig['updates'] = {
+    codeSigningCertificate: `./${input}/certificate.pem`,
+    codeSigningMetadata: {
+      keyid: 'main',
+      alg: 'rsa-v1_5-sha256',
+    },
+  };
   await attemptModification(
     projectRoot,
     {
       updates: {
         ...(exp.updates || {}),
-        codeSigningCertificate: `./${input}/certificate.pem`,
+        ...fields,
       },
     },
     {
-      updates: { codeSigningCertificate: `./${input}/certificate.pem` },
+      updates: {
+        ...fields,
+      },
     }
   );
 

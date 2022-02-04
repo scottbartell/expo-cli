@@ -54,6 +54,24 @@ export function convertKeyPairPEMToKeyPair({
 }
 
 /**
+ * Convert a PEM-formatted RSA public key to a public key for use with this library.
+ * @param publicKeyPEM PEM formatted public key
+ * @returns RSA public key
+ */
+export function convertPublicKeyPEMToPublicKey(publicKeyPEM: string): PKI.rsa.PublicKey {
+  return PKI.publicKeyFromPem(publicKeyPEM);
+}
+
+/**
+ * Convert a PEM-formatted RSA private key to a private key for use with this library.
+ * @param privateKeyPEM PEM formatted private key
+ * @returns RSA private key
+ */
+export function convertPrivateKeyPEMToPrivateKey(privateKeyPEM: string): PKI.rsa.PrivateKey {
+  return PKI.privateKeyFromPem(privateKeyPEM);
+}
+
+/**
  * Convert a PEM-formatted X.509 certificate to a certificate for use with this library.
  * @param certificatePEM PEM formatted X.509 certificate
  * @returns  X.509 Certificate
@@ -201,4 +219,31 @@ export function validateSelfSignedCertificate(
   if (!doPrivateAndPublicKeysMatch(keyPair.privateKey, keyPair.publicKey)) {
     throw new Error('keyPair key mismatch');
   }
+}
+
+/**
+ * Sign a string with an RSA private key and verify that the signature is valid for the RSA
+ * public key in the certificate.
+ * @param privateKey RSA private key
+ * @param certificate X.509 certificate
+ * @param stringToSign string for which to generate a signature and verify
+ * @returns base64-encoded signature
+ */
+export function signStringRSASHA256AndVerify(
+  privateKey: PKI.rsa.PrivateKey,
+  certificate: PKI.Certificate,
+  stringToSign: string
+): string {
+  const digest = md.sha256.create().update(stringToSign);
+  const digestSignature = privateKey.sign(digest);
+  const isValidSignature = (certificate.publicKey as PKI.rsa.PublicKey).verify(
+    digest.digest().getBytes(),
+    digestSignature
+  );
+
+  if (!isValidSignature) {
+    throw new Error('Signature generated with private key not valid for certificate');
+  }
+
+  return util.encode64(digestSignature);
 }
