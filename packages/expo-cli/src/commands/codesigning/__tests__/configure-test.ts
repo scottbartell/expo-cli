@@ -153,5 +153,6 @@ Ww==
 
     const config = getConfig(projectRoot);
     expect(config.exp.updates?.codeSigningCertificate).toBeUndefined();
+    expect(config.exp.updates?.codeSigningMetadata).toBeUndefined();
   });
 });
